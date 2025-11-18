@@ -1,0 +1,90 @@
+\documentclass{beamer}
+
+% Theme
+\usetheme{Madrid}
+
+% Optional packages
+\usepackage[utf8]{inputenc}
+\usepackage{graphicx}
+\usepackage{amsmath, amsfonts, amssymb}
+
+% Title information
+\title[Short Title]{Full Presentation Title}
+\subtitle{Optional Subtitle}
+\author{authors}
+\institute{}
+\date{\today}
+
+\begin{document}
+
+% Title Page
+\begin{frame}
+  \titlepage
+\end{frame}
+
+% Table of Contents
+\begin{frame}{Outline}
+  \tableofcontents
+\end{frame}
+
+% Section 1
+\section{Introduction}
+
+\begin{frame}{Slide Title}
+  This is your first content slide.
+  
+  \begin{itemize}
+      \item Point 1
+      \item Point 2
+      \item Point 3
+  \end{itemize}
+\end{frame}
+
+% Section 2
+\section{More Content}
+
+\begin{frame}{Simplified Foundation Model}
+    $$ y = f_n(f_{n-1}(...f_1(x))) $$
+    $$ f_i = \sigma(W_ix + b_i) $$
+    Our input $x$ is a 2d matrix, the W's are linear transformations so they
+    can be represented as matrices, and $\sigma$ is a nonlinear function.
+\end{frame}
+
+\begin{frame} {Tensor Parallelism}
+
+
+\end{frame}
+
+\begin{frame} {Tensor Parallelism(Column)}
+  We can split the weight matrix W into smaller matrices depending on the number of devices we have.
+  Each $W_i^j$ is stored on a different device, and along with it we send the entries of $x$
+  that correspond to the columns of $W_i$ that are held within each $W_i^j$ as a column vector, $x_{L_j}$.
+  $$ W_i = \begin{bmatrix} W_{i}^1 & W_{i}^2 & ... & W_{i}^m \end{bmatrix} $$
+  Each device is then computing $W_i^j x_{L_j}$ which we can think of as
+  $$ W_i^j x_{L_j} = 
+  \begin{bmatrix}
+  w_{11}^j & w_{12}^j & ... & w_{1k}^j \\
+  w_{21}^j & w_{22}^j & ... & w_{2k}^j \\
+  \vdots & \vdots & \ddots & \vdots \\
+  w_{m1}^j & w_{m2}^j & ... & w_{mk}^j
+  \end{bmatrix}
+  \begin{bmatrix}
+  x_p \\
+  x_p+1 \\
+  \vdots \\
+  x_p+k-1
+  \end{bmatrix}
+  $$
+
+\end{frame}
+
+\begin{frame} {Tensor Parallelism(Column) pt 2}
+
+\end{frame}
+
+% Ending
+\begin{frame}{Thank You}
+  Questions?
+\end{frame}
+
+\end{document}
