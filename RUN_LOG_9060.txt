@@ -1,0 +1,23 @@
+
+Device W:
+[[ 7.  5.  2.]
+ [ 2.  6.  9.]
+ [ 1.  2.  3.]]
+
+Device x:
+[[ 3.]
+ [ 9.]
+ [ 9.]]
+
+Device b:
+[[ 4.  4.  2.]]
+
+Result: 
+[[  88.  145.   50.]]
+
+Verification (CPU computation):
+[[  88.  145.   50.]]
+Traceback (most recent call last):
+  File "foundationModel.py", line 66, in <module>
+    print("\nMatch:", np.allclose(f, cpu_result))
+NameError: name 'f' is not defined

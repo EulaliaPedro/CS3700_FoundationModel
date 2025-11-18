@@ -1,0 +1,21 @@
+
+Device W:
+[[ 1.  4.  5.]
+ [ 4.  9.  5.]
+ [ 5.  8.  6.]]
+
+Device x:
+[[ 9.]
+ [ 8.]
+ [ 9.]]
+
+Device b:
+[[ 2.  2.  3.]]
+
+Result: 
+[[  88.  155.  166.]]
+
+Verification (CPU computation):
+[[  88.  155.  166.]]
+
+Match: True
