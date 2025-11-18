@@ -1,7 +1,8 @@
 \documentclass{beamer}
 
 % Theme
-\usetheme{Madrid}
+\usetheme{}
+% default theme was Madrid
 
 % Optional packages
 \usepackage[utf8]{inputenc}
@@ -50,23 +51,44 @@
     can be represented as matrices, and $\sigma$ is a nonlinear function.
 \end{frame}
 
-\begin{frame} {Tensor Parallelism}
+\begin{frame} {Pipeline Parallelism}
 
 
 \end{frame}
 
-\begin{frame} {Tensor Parallelism(Column)}
-  We can split the weight matrix W into smaller matrices depending on the number of devices we have.
-  Each $W_i^j$ is stored on a different device, and along with it we send the entries of $x$
-  that correspond to the columns of $W_i$ that are held within each $W_i^j$ as a column vector, $x_{L_j}$.
-  $$ W_i = \begin{bmatrix} W_{i}^1 & W_{i}^2 & ... & W_{i}^m \end{bmatrix} $$
-  Each device is then computing $W_i^j x_{L_j}$ which we can think of as
-  $$ W_i^j x_{L_j} = 
+
+
+\begin{frame} {Tensor Parallelism(Row)}
+  We can split the weight matrix $W_i$ intro groups of rows depending on how many devices we have.
+  Each entry of the $k$th result of $W_i x$ is equal to the $k$th row of $W_i$ times $x$,
+  so we just have each device compute $C_j x$. Since each device is fully responsible for specific
+  entries of the result, we can also give the corresponding entries of $b_i$, which we will label $b_{L_j}$
+  to each device and apply our nonlinear function.
+  We end up with each device computing $\sigma(C_j x + b_{L_j})$, and then gathering the various elements from 
+  each device into a single vector to be fed into the next function
+
+  $$ W_i =
   \begin{bmatrix}
-  w_{11}^j & w_{12}^j & ... & w_{1k}^j \\
-  w_{21}^j & w_{22}^j & ... & w_{2k}^j \\
+  C_1 \\
+  C_2 \\
+  \vdots \\
+  C_m
+  \end{bmatrix}
+  $$
+\end{frame}
+
+\begin{frame} {Tensor Parallelism(Column)}
+  We can split the weight matrix $W_i$ into smaller matrices depending on the number of devices we have.
+  Each $A_j$ is stored on a different device, and along with it we send the entries of $x$
+  that correspond to the columns of $W_i$ that are held within each $A_j$ as a column vector, $x_{L_j}$.
+  $$ W_i = \begin{bmatrix} A_1 & A_2 & ... & A_3 \end{bmatrix} $$
+  Each device is then computing $A_j x_{L_j}$ which we can think of as
+  $$ A_j x_{L_j} = 
+  \begin{bmatrix}
+  a_{11}(j) & a_{12}(j) & ... & a_{1k}(j) \\
+  a_{21}(j) & a_{22}(j) & ... & a_{2k}(j) \\
   \vdots & \vdots & \ddots & \vdots \\
-  w_{m1}^j & w_{m2}^j & ... & w_{mk}^j
+  a_{m1}(j) & a_{m2}(j) & ... & a_{mk}(j)
   \end{bmatrix}
   \begin{bmatrix}
   x_p \\
