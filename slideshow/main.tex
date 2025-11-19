@@ -10,8 +10,8 @@
 \usepackage{amsmath, amsfonts, amssymb}
 
 % Title information
-\title[Short Title]{Full Presentation Title}
-\subtitle{Optional Subtitle}
+\title[Short Title]{Computation for Foundation Models}
+\subtitle{Tensor Paralellism}
 \author{authors}
 \institute{}
 \date{\today}
@@ -43,19 +43,50 @@
 
 % Section 2
 \section{More Content}
+\begin{frame}{What is a foudation model}
+  A foundational model is a machine/ deep learning model that can be applied
+  to a wide range of use cases. Examples include GPT, stable diffusion, and DALL-E.
+
+\end{frame}
 
 \begin{frame}{Simplified Foundation Model}
-    $$ y = f_n(f_{n-1}(...f_1(x))) $$
-    $$ f_i = \sigma(W_ix + b_i) $$
-    Our input $x$ is a 2d matrix, the W's are linear transformations so they
-    can be represented as matrices, and $\sigma$ is a nonlinear function.
+    To begin with, we will only look at what happens to the input of a foundation model,
+    and not the process of it backtracking and learning. This version of a "model" has a lot
+    stripped away from it for the purpose of explaining, but the methods shown here not only
+    can be used for a full model, but are actively being used in existing models.
+    $$ y = f_n(f_{n-1}(...f_1(X))) $$
+    $$ f_i = \sigma(W_iX + b_i) $$
+    Our input $X$ is a 2d matrix, the W's are linear transformations so they
+    can be represented as matrices, and $\sigma$ is a nonlinear function, and y
+    is the output.
 \end{frame}
 
-\begin{frame} {Pipeline Parallelism}
-
+\begin{frame}{Tensor Parallelism}
+  Tensor parallelism is a way of computing our large from the previous slide across
+  multiple devices, or gpus, using linear algebra tricks to split up the computations.
 
 \end{frame}
 
+
+\begin{frame} {Tensor Parallelism (1D)}
+  For our 1D case, $X$ being a matrix doesn't actually matter and we can simplify
+  how we think about it to just considering the processing of each column of $X$, which we
+  will label $x$.
+  So for 1D, our model simplifies to $f_i = \sigma(W_ix +b_i)$.
+
+  $$WX = 
+  W
+\begin{bmatrix}
+x_1 & x_2 & \cdots & x_r
+\end{bmatrix}
+=
+\begin{bmatrix}
+Wx_1 & Wx_2 & \cdots & Wx_r
+\end{bmatrix}
+$$
+In other words, we will think of $x$ as being a single column vector for our 1D tensor
+parallelism cases.
+\end{frame}
 
 
 \begin{frame} {Tensor Parallelism(Row)}
@@ -103,6 +134,73 @@
 \begin{frame} {Tensor Parallelism(Column) pt 2}
 
 \end{frame}
+
+
+\begin{frame} {2D Tensor Parallelism}
+  Suppose we have $WX + B$ and $q^2$ devices. We can split the matrices W and X
+  into $q^2$ blocks each and get
+  \[
+W =
+\begin{bmatrix}
+W_{11} & W_{12} & \cdots & W_{1q} \\
+W_{21} & W_{22} & \cdots & W_{2q} \\
+\vdots & \vdots & \ddots & \vdots \\
+W_{q1} & W_{q2} & \cdots & W_{qq}
+\end{bmatrix},
+\qquad
+X =
+\begin{bmatrix}
+X_{11} & X_{12} & \cdots & X_{1q} \\
+X_{21} & X_{22} & \cdots & X_{2q} \\
+\vdots & \vdots & \ddots & \vdots \\
+X_{q1} & X_{q2} & \cdots & X_{qq}
+\end{bmatrix}.
+\]
+
+\[
+Y = WX =
+\begin{bmatrix}
+\sum\limits_{k=1}^{q} W_{1k} X_{k1} &
+\sum\limits_{k=1}^{q} W_{1k} X_{k2} &
+\cdots &
+\sum\limits_{k=1}^{q} W_{1k} X_{kq}
+\\[6pt]
+\sum\limits_{k=1}^{q} W_{2k} X_{k1} &
+\sum\limits_{k=1}^{q} W_{2k} X_{k2} &
+\cdots &
+\sum\limits_{k=1}^{q} W_{2k} X_{kq}
+\\[6pt]
+\vdots & \vdots & \ddots & \vdots
+\\[6pt]
+\sum\limits_{k=1}^{q} W_{qk} X_{k1} &
+\sum\limits_{k=1}^{q} W_{qk} X_{k2} &
+\cdots &
+\sum\limits_{k=1}^{q} W_{qk} X_{kq}
+\end{bmatrix} + B.
+\]
+\end{frame}
+
+\begin{frame}{2D Tensor Parallelism pt 2 (SUMMA algorithm)}
+
+\end{frame}
+
+\begin{frame}{Performance Statistics}
+  TODO: big O notation comparison
+\end{frame}
+
+\begin{frame}{Relevancy and Impact}
+  As AI is becoming increasingly more relevant, and increasingly more complex, large
+  HPC's are being built with huge budgets to be used for these models, but then comes the
+  challenge of actually having ways to utilize these large machines with the models.
+\end{frame}
+
+\begin{frame}{Real world uses}
+  % https://arxiv.org/pdf/2301.08658
+  Tensor parallelism is a very important technique being used in almost all foundation model training.
+\end{frame}
+
+
+
 
 % Ending
 \begin{frame}{Thank You}
