@@ -23,29 +23,13 @@
   \titlepage
 \end{frame}
 
-% Table of Contents
-\begin{frame}{Outline}
-  \tableofcontents
-\end{frame}
-
-% Section 1
-\section{Introduction}
-
-\begin{frame}{Slide Title}
-  This is your first content slide.
-  
-  \begin{itemize}
-      \item Point 1
-      \item Point 2
-      \item Point 3
-  \end{itemize}
-\end{frame}
 
 % Section 2
 \section{More Content}
 \begin{frame}{What is a foudation model}
   A foundational model is a machine/ deep learning model that can be applied
   to a wide range of use cases. Examples include GPT, stable diffusion, and DALL-E.
+  The most common architecture used currently is the transformer architecture.
 
 \end{frame}
 
@@ -90,7 +74,7 @@ parallelism cases.
 
 
 \begin{frame} {Tensor Parallelism(Row)}
-  We can split the weight matrix $W_i$ intro groups of rows depending on how many devices we have.
+  We can split the weight matrix $W_i$ into groups of rows depending on how many devices we have.
   Each entry of the $k$th result of $W_i x$ is equal to the $k$th row of $W_i$ times $x$,
   so we just have each device compute $C_j x$. Since each device is fully responsible for specific
   entries of the result, we can also give the corresponding entries of $b_i$, which we will label $b_{L_j}$
@@ -109,7 +93,7 @@ parallelism cases.
 \end{frame}
 
 \begin{frame} {Tensor Parallelism(Column)}
-  We can split the weight matrix $W_i$ into smaller matrices depending on the number of devices we have.
+  We can split the weight matrix $W_i$ into groups of columns depending on the number of devices we have.
   Each $A_j$ is stored on a different device, and along with it we send the entries of $x$
   that correspond to the columns of $W_i$ that are held within each $A_j$ as a column vector, $x_{L_j}$.
   $$ W_i = \begin{bmatrix} A_1 & A_2 & ... & A_3 \end{bmatrix} $$
@@ -128,12 +112,10 @@ parallelism cases.
   x_p+k-1
   \end{bmatrix}
   $$
+  The result of each device is then combined entry by entry to be create the final vector.
 
 \end{frame}
 
-\begin{frame} {Tensor Parallelism(Column) pt 2}
-
-\end{frame}
 
 
 \begin{frame} {2D Tensor Parallelism}
@@ -180,26 +162,37 @@ Y = WX =
 \]
 \end{frame}
 
+% TODO FIX THIS THIS IS VERY WRONG RIGHT NOW
 \begin{frame}{2D Tensor Parallelism pt 2 (SUMMA algorithm)}
 
+  Since we have $q^2$ devices, and a matrix with $q^2$ total entries, each device is given an entry
+  to compute. To do this first the devices are arranged into a matrix and each given $W_{ij}$ and $X_{ij}$
+  where $i$ is that devices row in the matrix and $j$ is that devices column in the matrix. Each device
+  computes $W_{ij} X_{ij}$ and broadcasts the result to the other devices in the same row and column,
+  which then gives each device exactly the matrices it needs to compute each sum.
+  $$\sum\limits_{k=1}^{q} W_{ik}X_{kj}$$
+  Note: There are similar algorithms to compute both $A^TB$ and $AB^T$, which are are both computations that
+  can be found in a transformer model, the most common type of foundation model.
 \end{frame}
 
 \begin{frame}{Performance Statistics}
-  TODO: big O notation comparison
+  -2d tensor parallelism has a lower communication cost than 1d
+
 \end{frame}
 
-\begin{frame}{Relevancy and Impact}
-  As AI is becoming increasingly more relevant, and increasingly more complex, large
-  HPC's are being built with huge budgets to be used for these models, but then comes the
-  challenge of actually having ways to utilize these large machines with the models.
+\begin{frame}{Relevancy, Impact and real world uses}
+  As AI models are getting bigger and bigger, we need ways to actually handle these massive models
+  both on the hardware and software side, as well as ways to parallelize the models in the first place.
+
+  Tensor parallelism is used in many large foundation models, which are being used in many 
+  different ways today. From chat bots and image generation, all the way to more professional use cases
+  such as medical ones.
 \end{frame}
 
-\begin{frame}{Real world uses}
-  % https://arxiv.org/pdf/2301.08658
-  Tensor parallelism is a very important technique being used in almost all foundation model training.
+
+\begin{frame}{Active reserach}
+  The
 \end{frame}
-
-
 
 
 % Ending
