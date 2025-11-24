@@ -26,7 +26,7 @@
 
 % Section 2
 \section{More Content}
-\begin{frame}{What is a foudation model}
+\begin{frame}{What is a foundation model}
   A foundational model is a machine/ deep learning model that can be applied
   to a wide range of use cases. Examples include GPT, stable diffusion, and DALL-E.
   The most common architecture used currently is the transformer architecture.
@@ -37,7 +37,8 @@
     To begin with, we will only look at what happens to the input of a foundation model,
     and not the process of it backtracking and learning. This version of a "model" has a lot
     stripped away from it for the purpose of explaining, but the methods shown here not only
-    can be used for a full model, but are actively being used in existing models.
+    can be used for a full model, but are actively being used in existing models. For parallelism
+    analysis, it is common to treat each column of $X$ independently.
     $$ y = f_n(f_{n-1}(...f_1(X))) $$
     $$ f_i = \sigma(W_iX + b_i) $$
     Our input $X$ is a 2d matrix, the W's are linear transformations so they
@@ -47,7 +48,7 @@
 
 \begin{frame}{Tensor Parallelism}
   Tensor parallelism is a way of computing our large from the previous slide across
-  multiple devices, or gpus, using linear algebra tricks to split up the computations.
+  multiple processors, or gpus, using linear algebra tricks to split up the computations.
 
 \end{frame}
 
@@ -74,12 +75,12 @@ parallelism cases.
 
 
 \begin{frame} {Tensor Parallelism(Row)}
-  We can split the weight matrix $W_i$ into groups of rows depending on how many devices we have.
+  We can split the weight matrix $W_i$ into groups of rows depending on how many processors we have.
   Each entry of the $k$th result of $W_i x$ is equal to the $k$th row of $W_i$ times $x$,
-  so we just have each device compute $C_j x$. Since each device is fully responsible for specific
+  so we just have each processor compute $C_j x$. Since each processor is fully responsible for specific
   entries of the result, we can also give the corresponding entries of $b_i$, which we will label $b_{L_j}$
-  to each device and apply our nonlinear function.
-  We end up with each device computing $\sigma(C_j x + b_{L_j})$, and then gathering the various elements from 
+  to each processor and apply our nonlinear function.
+  We end up with each processor computing $\sigma(C_j x + b_{L_j})$, and then gathering the various elements from 
   each device into a single vector to be fed into the next function
 
   $$ W_i =
@@ -93,11 +94,11 @@ parallelism cases.
 \end{frame}
 
 \begin{frame} {Tensor Parallelism(Column)}
-  We can split the weight matrix $W_i$ into groups of columns depending on the number of devices we have.
-  Each $A_j$ is stored on a different device, and along with it we send the entries of $x$
+  We can split the weight matrix $W_i$ into groups of columns depending on the number of processors we have.
+  Each $A_j$ is stored on a different processor, and along with it we send the entries of $x$
   that correspond to the columns of $W_i$ that are held within each $A_j$ as a column vector, $x_{L_j}$.
   $$ W_i = \begin{bmatrix} A_1 & A_2 & ... & A_3 \end{bmatrix} $$
-  Each device is then computing $A_j x_{L_j}$ which we can think of as
+  Each processor is then computing $A_j x_{L_j}$ which we can think of as
   $$ A_j x_{L_j} = 
   \begin{bmatrix}
   a_{11}(j) & a_{12}(j) & ... & a_{1k}(j) \\
@@ -112,14 +113,14 @@ parallelism cases.
   x_p+k-1
   \end{bmatrix}
   $$
-  The result of each device is then combined entry by entry to be create the final vector.
+  The result of each processor is then combined entry by entry to be create the final vector.
 
 \end{frame}
 
 
 
 \begin{frame} {2D Tensor Parallelism}
-  Suppose we have $WX + B$ and $q^2$ devices. We can split the matrices W and X
+  Suppose we have $WX + B$ and $q^2$ processors. We can split the matrices W and X
   into $q^2$ blocks each and get
   \[
 W =
@@ -165,12 +166,11 @@ Y = WX =
 % TODO FIX THIS THIS IS VERY WRONG RIGHT NOW
 \begin{frame}{2D Tensor Parallelism pt 2 (SUMMA algorithm)}
 
-  Since we have $q^2$ devices, and a matrix with $q^2$ total entries, each device is given an entry
-  to compute. To do this first the devices are arranged into a matrix and each given $W_{ij}$ and $X_{ij}$
-  where $i$ is that devices row in the matrix and $j$ is that devices column in the matrix. Each device
-  computes $W_{ij} X_{ij}$ and broadcasts the result to the other devices in the same row and column,
-  which then gives each device exactly the matrices it needs to compute each sum.
-  $$\sum\limits_{k=1}^{q} W_{ik}X_{kj}$$
+  Since we have a grid of $q^2$ processors, and a matrix of $q^2$ blocks, each processor is given $W_{ij}$ and $X_{ij}$
+  and computes $\sum\limits_{k=1}^{q} W_{ik}X_{kj}$. To do this, each processor computes $W_{ij} X_{ij}$ and broadcasts
+  the result to the other processors in the same row and column which gives each processor exactly the matrices it needs
+  to compute the sum.
+
   Note: There are similar algorithms to compute both $A^TB$ and $AB^T$, which are are both computations that
   can be found in a transformer model, the most common type of foundation model.
 \end{frame}
@@ -180,24 +180,40 @@ Y = WX =
 
 \end{frame}
 
-\begin{frame}{Relevancy, Impact and real world uses}
+\begin{frame}{Strengths and Weaknesses}
+  2D tensor parallelism comes with the downside of requiring a square number of processors to work.
+  Also, if the split is too aggressive and the matrix blocks become
+  too small which leads to poor GPU utilization.
+
+  On the other hand, 2D tensor parallelism comes with decreased communication volume which means
+  increased communication efficiency. Since we are splitting in both
+  dimension for 2D, each processor only needs a smaller block
+  of $W$ and $X$ which reduces the amount of data exchanged.
+
+\end{frame}
+
+\begin{frame}{Relevancy, Impact, real world uses and active research}
   As AI models are getting bigger and bigger, we need ways to actually handle these massive models
   both on the hardware and software side, as well as ways to parallelize the models in the first place.
 
   Tensor parallelism is used in many large foundation models, which are being used in many 
   different ways today. From chat bots and image generation, all the way to more professional use cases
   such as medical ones.
+
+  As for active research on computation for foundation models, almost all of the information
+  talked about shows up in distributed training systems for models such as
+  DeepSpeed and Megatron-LM. Both of which are actively researching new
+  parallelism strategies.
+
 \end{frame}
-
-
-\begin{frame}{Active reserach}
-  The
-\end{frame}
-
 
 % Ending
 \begin{frame}{Thank You}
   Questions?
+\end{frame}
+
+\begin{frame}{Sources}
+
 \end{frame}
 
 \end{document}
