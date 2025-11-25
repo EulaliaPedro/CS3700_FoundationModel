@@ -14,11 +14,6 @@ class tensor1D:
         # Determines the number of GPUs
         self.num_gpus = driver.Device.count()
 
-        # Checking the number of GPUs
-        #print("Number of GPUs detected:", self.num_gpus)
-        #if self.num_gpus == 0:
-         #  raise RuntimeError("No GPUs found!")
-
     def run(self, W, x, b):
 
         # Split the rows across GPUs
@@ -75,5 +70,4 @@ class tensor1D:
                 context.detach()
         # Concatenate into a 1D array
         return np.concatenate(split_results, axis=0)
-
 

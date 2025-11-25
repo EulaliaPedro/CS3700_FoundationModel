@@ -51,7 +51,7 @@ class tensor2D:
 
     def partial_product(self, W, X):
 
-        M, K1 = W.shae
+        M, K1 = W.shape
         K2, N = X.shape
         q =self.q
         #split into blocks
@@ -62,8 +62,9 @@ class tensor2D:
 
         for i in range(q):
             for j in range(q):
-               results = None
-
+               M_block, _ = W_blocks[i][0].shape
+               _, N_block = X_blocks[0][j].shape
+               results = np.zeros((M_block, N_block), dtype=np.float32)
                for k in range(q):
                    gpu_id = ((i*q+j)*q+k)%self.num_gpus
                    cxt = driver.Device(gpu_id).make_context()
