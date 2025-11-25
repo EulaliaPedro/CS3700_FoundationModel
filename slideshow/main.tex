@@ -1,7 +1,7 @@
 \documentclass{beamer}
 
 % Theme
-\usetheme{}
+\usetheme{AnnArbor}
 % default theme was Madrid
 
 % Optional packages
@@ -10,9 +10,9 @@
 \usepackage{amsmath, amsfonts, amssymb}
 
 % Title information
-\title[Short Title]{Computation for Foundation Models}
+\title[]{Computation for Foundation Models}
 \subtitle{Tensor Paralellism}
-\author{authors}
+\author{Grant Glaess, }
 \institute{}
 \date{\today}
 
@@ -47,7 +47,7 @@
 \end{frame}
 
 \begin{frame}{Tensor Parallelism}
-  Tensor parallelism is a way of computing our large from the previous slide across
+  Tensor parallelism is a way of computing our large linear operations from the previous slide across
   multiple processors, or gpus, using linear algebra tricks to split up the computations.
 
 \end{frame}
@@ -167,9 +167,9 @@ Y = WX =
 \begin{frame}{2D Tensor Parallelism pt 2 (SUMMA algorithm)}
 
   Since we have a grid of $q^2$ processors, and a matrix of $q^2$ blocks, each processor is given $W_{ij}$ and $X_{ij}$
-  and computes $\sum\limits_{k=1}^{q} W_{ik}X_{kj}$. To do this, each processor computes $W_{ij} X_{ij}$ and broadcasts
-  the result to the other processors in the same row and column which gives each processor exactly the matrices it needs
-  to compute the sum.
+  and computes $\sum\limits_{k=1}^{q} W_{ik}X_{kj}$. To do this, each processor computes $W_{ij} X_{ij}$ and broadcasts $W_{ij}$
+  to each processor in the same row as it and broadcasts $X_{ij}$ to processors in the same column.
+  This gives each processor exactly the block matrices it needs to compute each sum.
 
   Note: There are similar algorithms to compute both $A^TB$ and $AB^T$, which are are both computations that
   can be found in a transformer model, the most common type of foundation model.
@@ -190,14 +190,18 @@ Y = WX =
   dimension for 2D, each processor only needs a smaller block
   of $W$ and $X$ which reduces the amount of data exchanged.
 
+  While 1D tensor parallelism is easier to implement, it doesn't scale as well
+  as communication involves sending matrices that have one dimension proportional
+  to the entire model size.
+
 \end{frame}
 
 \begin{frame}{Relevancy, Impact, real world uses and active research}
   As AI models are getting bigger and bigger, we need ways to actually handle these massive models
   both on the hardware and software side, as well as ways to parallelize the models in the first place.
 
-  Tensor parallelism is used in many large foundation models, which are being used in many 
-  different ways today. From chat bots and image generation, all the way to more professional use cases
+  Tensor parallelism is used in many large foundation models, which are of course widely used today.
+  Examples include chat bots and image generation, all the way to more professional use cases
   such as medical ones.
 
   As for active research on computation for foundation models, almost all of the information
@@ -212,8 +216,47 @@ Y = WX =
   Questions?
 \end{frame}
 
-\begin{frame}{Sources}
 
+\begin{frame}[allowframebreaks]{Works Cited}
+\footnotesize
+\begin{thebibliography}{7}
+
+\bibitem{mathematical_foundations_dl_2025}
+Sourangshu Ghosh.
+\textit{Mathematical Foundations of Deep Learning}.
+arXiv:2502.0023v2 (2025).
+\url{https://rxiv.org/pdf/2502.0023v2.pdf}
+
+\bibitem{tensor_parallel_simple_uvadlc_2025}
+UVaDLC.
+\textit{Tensor Parallel Simple}.
+(2025).
+\url{https://uvadlc-notebooks.readthedocs.io/en/latest/tutorial_notebooks/scaling/JAX/tensor_parallel_simple.html}
+
+\bibitem{mlsys_pipeline_2024}
+Mai L., et al.
+\textit{Machine Learning Systems: Design \& Implementation}.
+Chapter: *Pipeline Parallelism with Micro-Batching* (2024).
+\url{https://openmlsys.github.io/html-en/chapter_distributed/Pipeline_Parallelism_with_Micro-Batching.html}
+
+\bibitem{colossalai_1d_tp_2024}
+Colossal-AI Documentation.
+\textit{1D Tensor Parallelism}. (2024).
+\url{https://colossalai.org/docs/features/1D_tensor_parallel}
+
+\bibitem{2d_tp_2021}
+Xu, Qifan, et al.
+\textit{An Efficient 2D Method for Training Super-Large Deep Learning Models}.
+arXiv:2104.05343 (2021).
+\url{https://arxiv.org/pdf/2104.05343}
+
+\bibitem{2p5d_tp_2021}
+Li, Liu, et al.
+\textit{2.5-D Tensor Parallelism for Distributed Model Training}.
+arXiv:2110.14883 (2021).
+\url{https://arxiv.org/pdf/2110.14883}
+
+\end{thebibliography}
 \end{frame}
 
 \end{document}
