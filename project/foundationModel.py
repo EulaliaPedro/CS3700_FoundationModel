@@ -2,123 +2,102 @@ import numpy as np
 import pycuda.driver as driver
 import pycuda.gpuarray as gpuarray
 from pycuda.compiler import SourceModule
+from tensor import tensor1D
+from simpleTensor import SimpleTensor
+from tensor2D import tensor2D
 
 
-#Kenerel for the matrix-vector multiplication
-kernel_code = """
-__global__ void dot_rows(float *W, float *x, float *b, float *result, int WIDTH) {
+driver.init()
+
+# Kenerel for the matrix-vector multiplication
+kernel_tensor = """
+  //activation
+
+#include <math.h>
+__device__ float gelu(float x){
+    const float k0 = 0.7978845608028654f;  // sqrt(2/pi)
+    float x3 = x * x * x;
+    float inner = k0 * (x + 0.044715f * x3);
+    return 0.5f * x * (1.0f + tanhf(inner));
+
+
+}
+__global__ void matrix_vec(float *W, float *x, float *b, float *y, int WIDTH){
     int row = blockIdx.x;
-    int col = threadIdx.x;
-    if (row >= WIDTH||col>=WIDTH) return;
+    if(row>= gridDim.x) return;
 
-    int idx = row * WIDTH + col;
+    float sum = 0.0f;
+    for(int col = 0; col < WIDTH; col++){
 
+       sum += W[row * WIDTH + col] * x[col];
+    }
     //multiply corresponding elements and add the bias
-    result[idx] = W[idx] * x[col] + b[col];
+    y[row] = gelu(sum + b[row]);
+}
+
+__global__ void mat_mat(float *W, float *X, float *y, int M, int N, int K){
+
+   int col = blockIdx.x * blockDim.x + threadIdx.x ;
+   int row = blockIdx.y * blockDim.y + threadIdx.y ;
+
+   float sum = 0;
+   if (row < M && col < N) {
+      for (int k = 0 ; k < K ; k++) {
+         sum += W[row * K + k ] * X[k * N + col] ;
+      }
+
+      y[row * N + col] = sum;
+   }
 }
 """
 
-
-# ----------------- Initilize CUDA ----------------- #
-driver.init()
-num_gpus = driver.Device.count() #detects the number of GPUs
-print("Number of GPUs detected:", num_gpus)
-if num_gpus == 0:
-    raise RuntimeError("No GPUs found!")
-
 # ----------------- FROM LAB 5 -----------------
 WIDTH = 6
+q = 2 # qxq block
 
-#Random square matrix (W)
+#Random square matrix
 host_W = np.random.randint(1,10, size=(WIDTH, WIDTH)).astype(np.float32)
 
 #Random column vector (x)
-host_x = np.random.randint(1,10, size=(WIDTH, 1)).astype(np.float32)
+host_x = np.random.randint(1,10, size=(WIDTH,)).astype(np.float32)
 
 #Random bias vecotr (b)
-host_b = np.random.randint(1,5,size=(1, WIDTH)).astype(np.float32)
+host_b = np.random.randint(1,10,size=(WIDTH,)).astype(np.float32)
 
-#split the rows across GPUs
-split_W = np.array_split(host_W, num_gpus, axis=0)
+#m generate 2nd matrix
+host_X = np.random.randint(1,10, size=(WIDTH, WIDTH)).astype(np.float32)
 
-split_results = [] #empty list, will store the partial results
+num_gpus = driver.Device.count()
+print("\nNumber of GPUs detected:", num_gpus)
 
-# Create contexts for each GPU (inactive)
-for i in range(num_gpus):
-
-    #create a CUDA context for this GPU
-    ctx = driver.Device(i).make_context()
-
-    try:
-        #Slicing the matrix(W) for this GPU
-        W_slice = split_W[i].astype(np.float32)
-        rows = W_slice.shape[0]
-
-        # Print the slice for this GPU
-        print("\n--- GPU {} will process these rows ---\n{}\n".format(i, W_slice))
-
-        #Transfer data to GPU
-        device_W = gpuarray.to_gpu(W_slice.ravel())
-        device_x = gpuarray.to_gpu(host_x.ravel())
-        device_b = gpuarray.to_gpu(host_b.ravel())
-
-        # Allocate result array on GPU
-        device_result = gpuarray.empty(rows * WIDTH, dtype=np.float32)
-
-        # Compile kernel in current GPU
-        mod = SourceModule(kernel_code)
-        dot_rows = mod.get_function("dot_rows")
-
-        # Defininf the size of block and grid
-        block = (WIDTH, 1, 1)
-        grid = (rows, 1)
-
-        #Launching kernel
-        dot_rows(
-                device_W, device_x, device_b, device_result,
-                np.int32(WIDTH), #np.int32(rows),
-                block=block, #_x),, 1, 1),
-                grid=grid #_x, 1))
-        )
-
-        #compying the result of the GPU back into host and reshape the matrix
-        split_results.append(device_result.get().reshape(rows, WIDTH))
-    finally:  #clean the CPU content
-        ctx.pop()
-        ctx.detach()
-
-# Combine the results from the GPUs
-final_result = np.vstack(split_results)
-
-# ---------- CPU Computation ---------- #
-cpu_result= host_W * host_x.ravel() + host_b  # multiplies each column by x[j]
-
-# ---------------- PRINT OUTPUT (testing for now)---------------- #
-print("\nHost W:\n", host_W)
-print("\nHost x:\n", host_x)
-print("\nHost b:\n", host_b)
-
-# ---------------- OUTPUT Result ---------------- #
-print("\nMatrix Result from GPU: ")
-print(final_result)
-
-# ---------------- OUTPUT Result (test) ---------------- #
-#checking result on CPU
-print("\nResult from CPU:")
-print(cpu_result)
-
-#if it matches in both the CPU and GPU
-print("\nMatch:", np.allclose(final_result, cpu_result))
+print("\nInput matrix W:")
+print(host_W)
+print("\nInput vector x:")
+print(host_x)
+print("\nBias vector b:")
+print(host_b)
 
 
+# Simple Tensor
+simple = SimpleTensor(kernel_tensor, WIDTH)
+simple_results = simple.run(host_W, host_x, host_b)
+# 1D Tensor
+tensor = tensor1D(kernel_tensor, WIDTH)
+output_results = tensor.run(host_W, host_x, host_b)
+
+# 2D tensor
+tensor_2d = tensor2D(kernel_tensor, q)
+results_2D = tensor_2d.run(host_W, host_X, host_b)
+
+# Outputs
+print("\nSimple Tensor Parallelism:")
+print(simple_results)
+
+print("\nResult for 1D Tensor Parallelism:")
+print(output_results)
 
 
-
-
-
-
-
-
-
+print("\nResult for 2D Tensor Parallelism:")
+print(results_2D)
 
 
