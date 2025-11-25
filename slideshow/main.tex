@@ -12,7 +12,7 @@
 % Title information
 \title[]{Computation for Foundation Models}
 \subtitle{Tensor Paralellism}
-\author{Grant Glaess, }
+\author{Grant Glaess, Eulalia Pedro}
 \institute{}
 \date{\today}
 
@@ -176,7 +176,15 @@ Y = WX =
 \end{frame}
 
 \begin{frame}{Performance Statistics}
-  -2d tensor parallelism has a lower communication cost than 1d
+      \begin{figure}[htbp] % Optional placement specifiers (here, top, bottom, page)
+        \centering % Centers the image
+        \includegraphics[width=0.4\textwidth]{graph.png}
+        \caption{Graph from "Colossal-AI: A Unified Deep Learning System For Large-Scale Parallel Training"}
+        \label{fig:myimage} % A label for cross-referencing
+    \end{figure}
+  From the graph we can see that communication volume scales better for
+  2D tensor parallelism compared to 1D.
+
 
 \end{frame}
 
