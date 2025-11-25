@@ -4,7 +4,7 @@ import pycuda.gpuarray as gpuarray
 from pycuda.compiler import SourceModule
 from tensor import tensor1D
 from simpleTensor import SimpleTensor
-from tensor_2D import tensor2D
+from tensor2D import tensor2D
 import time
 
 driver.init()
