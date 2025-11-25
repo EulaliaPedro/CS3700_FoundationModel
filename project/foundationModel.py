@@ -4,8 +4,8 @@ import pycuda.gpuarray as gpuarray
 from pycuda.compiler import SourceModule
 from tensor import tensor1D
 from simpleTensor import SimpleTensor
-from tensor2D import tensor2D
-
+from tensor_2D import tensor2D
+import time
 
 driver.init()
 
@@ -40,7 +40,7 @@ __global__ void mat_mat(float *W, float *X, float *y, int M, int N, int K){
    int col = blockIdx.x * blockDim.x + threadIdx.x ;
    int row = blockIdx.y * blockDim.y + threadIdx.y ;
 
-   float sum = 0;
+   float sum = 0.0f;
    if (row < M && col < N) {
       for (int k = 0 ; k < K ; k++) {
          sum += W[row * K + k ] * X[k * N + col] ;
@@ -52,7 +52,8 @@ __global__ void mat_mat(float *W, float *X, float *y, int M, int N, int K){
 """
 
 # ----------------- FROM LAB 5 -----------------
-WIDTH = 6
+WIDTH = 14
+
 q = 2 # qxq block
 
 #Random square matrix
@@ -78,26 +79,37 @@ print("\nBias vector b:")
 print(host_b)
 
 
-# Simple Tensor
+# ------------------- Simple Tensor ------------------- #
+start = time.time()
+
 simple = SimpleTensor(kernel_tensor, WIDTH)
 simple_results = simple.run(host_W, host_x, host_b)
-# 1D Tensor
+
+end = time.time()
+# ------------------- 1D Tensor ------------------- #
+start = time.time()
+
 tensor = tensor1D(kernel_tensor, WIDTH)
 output_results = tensor.run(host_W, host_x, host_b)
 
-# 2D tensor
+end = time.time()
+
+# ------------------- 2D Tensor ------------------- #
+start = time.time()
 tensor_2d = tensor2D(kernel_tensor, q)
 results_2D = tensor_2d.run(host_W, host_X, host_b)
 
-# Outputs
+end = time.time()
+
+# -------------------- OUTPUTS -------------------- #
 print("\nSimple Tensor Parallelism:")
 print(simple_results)
+print("Simple Tensor run time:", end - start, "seconds")
 
 print("\nResult for 1D Tensor Parallelism:")
 print(output_results)
-
+print("1D Tensor run time:", end - start, "seconds")
 
 print("\nResult for 2D Tensor Parallelism:")
 print(results_2D)
-
-
+print("2D Tensor run time:", end - start, "seconds")
